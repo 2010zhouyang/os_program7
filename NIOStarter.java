@@ -3,7 +3,9 @@ import java.nio.*;
 import java.nio.file.*;
 import java.nio.channels.*;
 import java.util.*;
-
+import java.util.concurrent.Future;
+import java.nio.charset.Charset;
+import java.nio.channels.AsynchronousFileChannel;
 class FileRecord {
 	int opid;
 	Path inputFilePath;
@@ -79,19 +81,43 @@ private static boolean checkFileExist(String path) {
 return true;
 }
 
-private static void readData(FileRecord record) {
-	System.out.println(record.getOpid());
-	System.out.println(record.getInputFilePath().toString());
-	System.out.println(record.getByteOffset());
-	System.out.println(record.getByteCount());
+private static void readData(FileRecord record) throws Exception{
+	//System.out.println(record.getOpid());
+	//System.out.println(record.getInputFilePath().toString());
+	//System.out.println(record.getByteOffset());
+	//System.out.println(record.getByteCount());
+	//String filePath = record.getInputFilePath().toString();
+	ByteBuffer bbuff = ByteBuffer.allocate(1024); 
+	String encoding = System.getProperty("file.encoding");
+
+	//System.out.println("The File Location:"+filePath);
+	AsynchronousFileChannel channel = null;
 	try {
-	    AsynchronousFileChannel channel = AsynchronousFileChannel.open(record.getInputFilePath());
-	    ByteBuffer bbuff = ByteBuffer.allocate(1024);
+	    channel = AsynchronousFileChannel.open(record.getInputFilePath(), StandardOpenOption.READ);
+	    System.out.println("File Size: " + channel.size());
+	    Future<Integer> result = channel.read(bbuff,0);
+	
+	    while(!result.isDone()) {
+			//System.out.println("So elese:");	
+		}
+	    System.out.println("Read Done: " + result.isDone());
+	    System.out.println("Bytes read: " + result.get());	
+	    	
 	}
 	catch (Exception e) {
 		System.out.println("Exception:");
 		}
+
+	finally {
+		if(channel != null) {
+			channel.close();
+		}
 	
+	}
+	
+	bbuff.flip();
+	System.out.println(Charset.forName(encoding).decode(bbuff));
+	bbuff.clear();	
 }
 }
 
